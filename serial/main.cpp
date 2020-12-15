@@ -6,6 +6,8 @@
 
 using namespace std;
 
+string filename;
+
 double inner_product(double weighs[], float data[], int c){
     double ans(0);
     for (int i = 0; i < c; i++){
@@ -27,8 +29,10 @@ int max_index(double scores[]){
 }
 
 pair<float, float> minmax(int column, int rows){
-    ifstream data("train.csv");
-    if (!data.is_open())    {
+    string file_name;
+    file_name = filename + "train.csv";
+    ifstream data(file_name);
+    if (!data.is_open()){
         cout << "FILE DID NOT OPEN!";
     }
     string test;
@@ -68,8 +72,10 @@ pair<float, float> minmax(int column, int rows){
 }
 
 bool classify(int row, float mins[], float maxs[], double weights[][21]){
-    ifstream data("train.csv");
-    if (!data.is_open())    {
+    string file_name;
+    file_name = filename + "train.csv";
+    ifstream data(file_name);
+    if (!data.is_open()){
         cout << "FILE DID NOT OPEN!";
     }
     string price;
@@ -102,7 +108,9 @@ bool classify(int row, float mins[], float maxs[], double weights[][21]){
 }
 
 void read_weighs(double weights[][21]){
-    ifstream weightfile("weights.csv");
+    string file_name;
+    file_name = filename + "weights.csv";
+    ifstream weightfile(file_name);
     string b;
     getline(weightfile, b, '\n');
     for (int i = 0; i < 4; i++){
@@ -123,6 +131,7 @@ void read_weighs(double weights[][21]){
 int main(int argc, char const *argv[]){
     float mini[20];
     float maxi[20];
+    filename = argv[1];
     for (int i = 1; i < 21; i++){
         pair<float, float> p = minmax(i, 2000);
         mini[i - 1] = p.first;

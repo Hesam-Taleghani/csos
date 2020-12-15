@@ -10,6 +10,8 @@
 
 using namespace std;
 
+string filename;
+
 float mini[20];
 float maxi[20];
 double weights[4][21];
@@ -44,7 +46,9 @@ int max_index(double scores[]){
 }
 
 pair<float, float> minmax(int column, int rows){
-    ifstream data("train.csv");
+    string file_name;
+    file_name = filename + "train.csv";
+    ifstream data(file_name);
     if (!data.is_open())    {
         cout << "FILE DID NOT OPEN!";
     }
@@ -119,7 +123,9 @@ bool classify(string filename, int row, float mins[], float maxs[], double weigh
 }
 
 void read_weighs(double weights[][21]){
-    ifstream weightfile("weights.csv");
+    string file_name;
+    file_name = filename + "weights.csv";
+    ifstream weightfile(file_name);
     string b;
     getline(weightfile, b, '\n');
     for (int i = 0; i < 4; i++){
@@ -151,7 +157,6 @@ void* result_corrects(void* p){
 }
 
 int main(int argc, char const *argv[]){
-    auto start = chrono::high_resolution_clock::now();
     for (int i = 1; i < 21; i++){
         pair<float, float> p = minmax(i, 2000);
         mini[i - 1] = p.first;
@@ -164,14 +169,12 @@ int main(int argc, char const *argv[]){
     int return_code;
     void* response;
     long output;
-    float m1 = 0;
-    float* cpp = &m1;
 
     pthread_t threads[THREAD_NUMBER];
     for (int i = 0; i < THREAD_NUMBER; i++){
         thread_parts_data[i].thread_id = i;
         thread_parts_data[i].numbers = n;
-        thread_parts_data[i].filename = "train_" + to_string(i) + ".csv";
+        thread_parts_data[i].filename = filename + "train_" + to_string(i) + ".csv";
         return_code = pthread_create(&threads[i], NULL, result_corrects,
                       (void*)&thread_parts_data[i]);
     }
@@ -182,15 +185,10 @@ int main(int argc, char const *argv[]){
         corrects = corrects + output;
     }
     
-
     accuracy = corrects / 2000.0;
     accuracy = accuracy * 100;
     cout << "Accuracy: ";
     cout << fixed << setprecision(2) << accuracy << '%' << '\n';
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
-    *cpp = *cpp + duration.count();
-    cout << fixed << setprecision(2) << "time : " << *cpp << '\n';
     pthread_exit(NULL);
     return 0;
 }

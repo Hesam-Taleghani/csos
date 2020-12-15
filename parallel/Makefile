@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -g -std=c++11
+CFLAGS = -Wall -g -std=c++11 -pthread
 
 PhonePricePrediction.out: main.o 
 	$(CC) $(CFLAGS) -o PhonePricePrediction.out main.o
