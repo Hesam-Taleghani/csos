@@ -3,18 +3,25 @@
 #include <fstream>
 #include <string>
 #include <typeinfo>
+#include <pthread.h>
+#include <chrono>
+
+#define THREAD_NUMBER 4
 
 using namespace std;
 
+float mini[20];
+float maxi[20];
+double weights[4][21];
+
 struct part{
-    int start;
+    int thread_id;
     int numbers;
     string filename;
-    float mins[20];
-    float maxs[20];
-    double weights[4][21];
+    int cors = 0;
 };
 
+struct part thread_parts_data[THREAD_NUMBER];
 
 double inner_product(double weighs[], float data[], int c){
     double ans(0);
@@ -130,33 +137,60 @@ void read_weighs(double weights[][21]){
     weightfile.close();
 }
 
-int result_corrects(part p){
-    int s = p.start;
-    int n = p.numbers;
-    int cors = 0;
-    for (int i = s; i < s + n; i++){
-        if(classify(p.filename, i + 1, p.mins, p.maxs, p.weights)){
-            cors = cors + 1;
+void* result_corrects(void* p){
+    struct part* thread_part = (struct part*) p;
+    int k = thread_part->thread_id;
+    int n = thread_part->numbers;
+    for (int i = 0; i < n; i++){
+        if(classify(thread_part->filename, i + 1, mini, maxi, weights)){
+            thread_part->cors = thread_part->cors + 1;
         }
     }
+    long result = thread_part->cors;
+	pthread_exit((void*)result);
 }
 
 int main(int argc, char const *argv[]){
-    float mini[20];
-    float maxi[20];
+    auto start = chrono::high_resolution_clock::now();
     for (int i = 1; i < 21; i++){
         pair<float, float> p = minmax(i, 2000);
         mini[i - 1] = p.first;
         maxi[i - 1] = p.second;
     }
-    double weights[4][21];
     read_weighs(weights);
     int corrects = 0;
     double accuracy;
-    // threads.
+    int n = 2000 / THREAD_NUMBER;
+    int return_code;
+    void* response;
+    long output;
+    float m1 = 0;
+    float* cpp = &m1;
+
+    pthread_t threads[THREAD_NUMBER];
+    for (int i = 0; i < THREAD_NUMBER; i++){
+        thread_parts_data[i].thread_id = i;
+        thread_parts_data[i].numbers = n;
+        thread_parts_data[i].filename = "train_" + to_string(i) + ".csv";
+        return_code = pthread_create(&threads[i], NULL, result_corrects,
+                      (void*)&thread_parts_data[i]);
+    }
+
+    for (int i = 0; i < THREAD_NUMBER; i++){
+        return_code = pthread_join(threads[i], &response);
+        output = (long)response;
+        corrects = corrects + output;
+    }
+    
+
     accuracy = corrects / 2000.0;
     accuracy = accuracy * 100;
     cout << "Accuracy: ";
     cout << fixed << setprecision(2) << accuracy << '%' << '\n';
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
+    *cpp = *cpp + duration.count();
+    cout << fixed << setprecision(2) << "time : " << *cpp << '\n';
+    pthread_exit(NULL);
     return 0;
 }
