@@ -139,7 +139,6 @@ int result_corrects(part p){
             cors = cors + 1;
         }
     }
-    
 }
 
 int main(int argc, char const *argv[]){
